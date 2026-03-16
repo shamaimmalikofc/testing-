@@ -1,12 +1,313 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>KanbanPro</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0b0d12;--surface:#111318;--s2:#181b23;--s3:#1e2230;
+  --border:rgba(255,255,255,.07);--b2:rgba(255,255,255,.11);
+  --text:#eaecf3;--t2:#a0a8bf;--muted:#525870;
+  --accent:#6366f1;--a2:#818cf8;
+  --red-bg:rgba(239,68,68,.1);--red-t:#f87171;
+  --yel-bg:rgba(245,158,11,.1);--yel-t:#fbbf24;
+  --grn-bg:rgba(34,197,94,.1);--grn-t:#4ade80;
+}
+.light{
+  --bg:#f0f2f8;--surface:#fff;--s2:#f5f6fb;--s3:#eceef6;
+  --border:rgba(0,0,0,.08);--b2:rgba(0,0,0,.13);
+  --text:#12141c;--t2:#4a5068;--muted:#9aa0b8;
+  --a2:#4f46e5;
+  --red-bg:rgba(239,68,68,.08);--red-t:#dc2626;
+  --yel-bg:rgba(245,158,11,.08);--yel-t:#d97706;
+  --grn-bg:rgba(34,197,94,.08);--grn-t:#16a34a;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Plus Jakarta Sans',sans-serif}
+body{background:var(--bg);color:var(--text);transition: .3s,color .3s}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:99px}
+.hidden{display:none!important}
+
+/* Nav */
+#nav{position:sticky;top:0;z-index:40;background:var(--surface);border-bottom:1px solid var(--border);backdrop-filter:blur(16px)}
+#nav-inner{max-width:1440px;margin:0 auto;padding:0 24px;height:62px;display:flex;align-items:center;gap:12px}
+
+/* Search */
+.sw{position:relative}
+.sw svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted)}
+.sf{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:8px 12px 8px 32px;font-size:13px;font-family:inherit;color:var(--text);outline:none;width:220px;transition:border-color .2s,width .3s}
+.sf::placeholder{color:var(--muted)}
+.sf:focus{border-color:var(--accent);width:280px}
+
+/* Buttons */
+.bi{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--s2);border:1px solid var(--border);cursor:pointer;transition:background .2s;color:var(--t2)}
+.bi:hover{background:var(--s3)}
+.bp{display:flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:0 16px;height:38px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 4px 14px rgba(99,102,241,.3);transition:opacity .2s,transform .15s}
+.bp:hover{opacity:.9}
+.bp:active{transform:scale(.97)}
+.bg{background:var(--s2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:0 16px;height:38px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .2s}
+.bg:hover{background:var(--s3)}
+
+/* Layout */
+#layout{max-width:1440px;margin:0 auto;padding:22px;display:flex;gap:20px;align-items:flex-start}
+#board{flex:1;min-width:0;display:flex;gap:14px;align-items:stretch}
+
+/* Column */
+.kol{flex:1;min-width:265px;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden}
+.kol-head{padding:16px 16px 0}
+.kol-bar{height:3px;border-radius:99px;margin-bottom:14px}
+.kol-bar.red{background:linear-gradient(90deg,#ef4444,#f97316)}
+.kol-bar.yel{background:linear-gradient(90deg,#f59e0b,#eab308)}
+.kol-bar.grn{background:linear-gradient(90deg,#22c55e,#10b981)}
+.kol-title{display:flex;align-items:center;gap:8px;padding-bottom:13px;border-bottom:1px solid var(--border)}
+.dot{width:8px;height:8px;border-radius:50%}
+.dot.red{background:#ef4444;box-shadow:0 0 6px #ef4444}
+.dot.yel{background:#f59e0b;box-shadow:0 0 6px #f59e0b}
+.dot.grn{background:#22c55e;box-shadow:0 0 6px #22c55e}
+.kol-lbl{font-size:13px;font-weight:700}
+.kol-n{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:99px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.kol-n.red{background:var(--red-bg);color:var(--red-t)}
+.kol-n.yel{background:var(--yel-bg);color:var(--yel-t)}
+.kol-n.grn{background:var(--grn-bg);color:var(--grn-t)}
+
+/* Drop zone — the key: events on the zone itself, not children */
+.zone{
+  flex:1;padding:12px;display:flex;flex-direction:column;gap:8px;
+  min-height:280px;overflow-y:auto;
+  transition :  background-color .15s,outline .15s;
+  border-radius:0 0 18px 18px;
+  /* pointer-events always on zone */
+}
+.zone.over{background:rgba(99,102,241,.05);outline:2px dashed rgba(99,102,241,.4);outline-offset:-3px}
+
+/* Empty */
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:28px;pointer-events:none;user-select:none}
+.empty-ico{width:40px;height:40px;border-radius:11px;background:var(--s3);border:1px solid var(--b2);display:flex;align-items:center;justify-content:center}
+.empty p{font-size:12px;color:var(--muted);text-align:center;line-height:1.5}
+
+/* Card */
+.card{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:13px;cursor:grab;transition:transform .15s,box-shadow .15s,border-color .15s;flex-shrink:0;user-select:none}
+.card:hover{transform:translateY(-2px);box-shadow:0 6px 22px rgba(0,0,0,.18);border-color:rgba(99,102,241,.3)}
+.card.drag{opacity:.25;transform:scale(.96)}
+
+/* Pill */
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;border:1px solid transparent}
+.p-low{background:var(--grn-bg);color:var(--grn-t);border-color:rgba(34,197,94,.2)}
+.p-med{background:var(--yel-bg);color:var(--yel-t);border-color:rgba(245,158,11,.2)}
+.p-hi {background:var(--red-bg);color:var(--red-t);border-color:rgba(239,68,68,.2)}
+
+/* Dots menu */
+.dots{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:transparent;border:none;cursor:pointer;color:var(--muted);transition:background .15s}
+.dots:hover{background:var(--s3)}
+.mpop{display:none;position:absolute;right:0;top:28px;z-index:100;background:var(--surface);border:1px solid var(--b2);border-radius:12px;overflow:hidden;box-shadow:0 14px 36px rgba(0,0,0,.28);min-width:120px}
+.mpop.open{display:block}
+.mrow{display:flex;align-items:center;gap:8px;padding:9px 13px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text);transition:background .15s}
+.mrow:hover{background:var(--s2)}
+.mrow.del{color:var(--red-t)}
+
+/* Sidebar */
+#sb{width:248px;flex-shrink:0;display:flex;flex-direction:column;gap:11px}
+.sb-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px}
+.ring-wrap{position:relative;width:114px;height:114px;margin:12px auto 6px}
+.ring-t{fill:none;stroke:var(--s3);stroke-width:9}
+.ring-p{fill:none;stroke:var(--accent);stroke-width:9;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dashoffset .7s cubic-bezier(.4,0,.2,1);filter:drop-shadow(0 0 7px rgba(99,102,241,.5))}
+.ring-c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:13px 15px;display:flex;align-items:center;justify-content:space-between}
+.stat:hover{border-color:var(--b2)}
+.stat-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);display:block;margin-bottom:2px}
+.stat-n{font-size:24px;font-weight:800;line-height:1}
+.stat-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted)}
+
+/* Modal */
+#mwrap{display:none;position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.6);backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:16px}
+#mwrap.open{display:flex}
+#modal,#pmwrap-inner{background:var(--surface);border:1px solid var(--b2);border-radius:20px;width:100%;max-width:440px;padding:26px;box-shadow:0 36px 90px rgba(0,0,0,.45)}
+.mf{background:var(--s2);border:1px solid var(--border);border-radius:10px;width:100%;padding:10px 13px;font-size:14px;font-family:inherit;color:var(--text);outline:none;transition:border-color .2s}
+.mf:focus{border-color:var(--accent)}
+.mf::placeholder{color:var(--muted)}
+select.mf option{background:var(--surface)}
+.ml{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);display:block;margin-bottom:6px}
+
+/* Project picker modal */
+#pmwrap{display:none;position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.6);backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:16px}
+#pmwrap.open{display:flex}
+.proj-item{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-radius:11px;border:1px solid var(--border);background:var(--s2);cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:7px}
+.proj-item:hover,.proj-item.active{border-color:var(--accent);background:var(--s3)}
+.proj-item:last-child{margin-bottom:0}
+
+@media(max-width:860px){
+  #layout{flex-direction:column}
+  #sb{width:100%}
+  #board{overflow-x:auto}
+  .kol{min-width:250px}
+}
+</style>
 </head>
 <body>
-    Rana
-    
+
+<!-- NAV -->
+<div id="nav">
+  <div id="nav-inner">
+    <div style="display:flex;align-items:center;gap:9px;flex-shrink:0;margin-right:4px">
+      <div style="width:33px;height:33px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(99,102,241,.4)">
+        <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2.2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      </div>
+      <span style="font-size:17px;font-weight:800;letter-spacing:-.3px">KanbanPro</span>
+    </div>
+    <div class="sw">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="search" class="sf" type="text" placeholder="Search tasks…"/>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+      <div style="width:1px;height:20px;background:var(--b2)"></div>
+      <button id="theme-btn" class="bi" title="Toggle theme">
+        <svg id="ico-moon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg id="ico-sun" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hidden"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+      <button id="new-proj-btn" class="bp">
+        <svg width="12" height="12" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        New Project
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div id="layout">
+
+  <!-- Board -->
+  <div style="flex:1;min-width:0">
+    <!-- Section header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <h1 style="font-size:18px;font-weight:800;letter-spacing:-.3px">Projects</h1>
+        <button id="proj-picker-btn" class="bi" style="width:30px;height:30px;border-radius:8px" title="Switch project">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <span id="proj-name-display" style="font-size:13px;font-weight:600;color:var(--muted)"></span>
+      </div>
+      <button id="add-task-btn" class="bp" style="font-size:12px;height:34px;padding:0 13px">
+        <svg width="11" height="11" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        Add New Task
+      </button>
+    </div>
+
+    <!-- Columns -->
+    <div id="board">
+      <div class="kol">
+        <div class="kol-head">
+          <div class="kol-bar red"></div>
+          <div class="kol-title"><div class="dot red"></div><span class="kol-lbl">Yet to Start</span><span id="cnt-todo" class="kol-n red">0</span></div>
+        </div>
+        <div id="col-todo" class="zone" data-col="todo"></div>
+      </div>
+      <div class="kol">
+        <div class="kol-head">
+          <div class="kol-bar yel"></div>
+          <div class="kol-title"><div class="dot yel"></div><span class="kol-lbl">In Progress</span><span id="cnt-inprogress" class="kol-n yel">0</span></div>
+        </div>
+        <div id="col-inprogress" class="zone" data-col="inprogress"></div>
+      </div>
+      <div class="kol">
+        <div class="kol-head">
+          <div class="kol-bar grn"></div>
+          <div class="kol-title"><div class="dot grn"></div><span class="kol-lbl">Completed</span><span id="cnt-completed" class="kol-n grn">0</span></div>
+        </div>
+        <div id="col-completed" class="zone" data-col="completed"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div id="sb">
+    <div class="sb-card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div>
+          <span class="lbl">Project</span>
+          <p id="sb-proj-name" style="font-size:15px;font-weight:800;margin-top:3px;letter-spacing:-.2px">—</p>
+        </div>
+        <div style="width:32px;height:32px;background:var(--grn-bg);border-radius:9px;display:flex;align-items:center;justify-content:center">
+          <svg width="14" height="14" fill="none" stroke="var(--grn-t)" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+      </div>
+      <div class="ring-wrap">
+        <svg viewBox="0 0 100 100" style="width:100%;height:100%">
+          <circle class="ring-t" cx="50" cy="50" r="40"/>
+          <circle id="ring" class="ring-p" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3"/>
+        </svg>
+        <div class="ring-c">
+          <span id="ring-pct" style="font-size:22px;font-weight:800;line-height:1">0%</span>
+          <span style="font-size:10px;color:var(--muted);margin-top:2px">complete</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:2px 2px 0"><span class="lbl">Overview</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+      <div class="stat" style="grid-column:1/-1">
+        <div><span class="stat-lbl">Total</span><span id="s-total" class="stat-n">0</span></div>
+        <div class="stat-ico" style="background:rgba(99,102,241,.12)"><svg width="15" height="15" fill="none" stroke="var(--a2)" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg></div>
+      </div>
+      <div class="stat">
+        <div><span class="stat-lbl" style="color:var(--red-t)">Waiting</span><span id="s-todo" class="stat-n" style="color:var(--red-t)">0</span></div>
+        <div class="stat-ico" style="background:var(--red-bg)"><svg width="14" height="14" fill="none" stroke="var(--red-t)" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+      </div>
+      <div class="stat">
+        <div><span class="stat-lbl" style="color:var(--yel-t)">Active</span><span id="s-inp" class="stat-n" style="color:var(--yel-t)">0</span></div>
+        <div class="stat-ico" style="background:var(--yel-bg)"><svg width="14" height="14" fill="none" stroke="var(--yel-t)" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.18-3.5"/></svg></div>
+      </div>
+      <div class="stat" style="grid-column:1/-1">
+        <div><span class="stat-lbl" style="color:var(--grn-t)">Done</span><span id="s-done" class="stat-n" style="color:var(--grn-t)">0</span></div>
+        <div class="stat-ico" style="background:var(--grn-bg)"><svg width="14" height="14" fill="none" stroke="var(--grn-t)" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TASK MODAL -->
+<div id="mwrap" onclick="if(event.target===this)closeModal()">
+  <div id="modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div><p id="modal-title" style="font-size:17px;font-weight:800">New Task</p><p style="font-size:12px;color:var(--muted);margin-top:1px">Fill in the details below</p></div>
+      <button onclick="closeModal()" class="bi" style="width:30px;height:30px;border-radius:8px"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:13px">
+      <div><label class="ml">Title <span style="color:var(--red-t)">*</span></label><input id="f-title" class="mf" type="text" placeholder="Task title"/></div>
+      <div><label class="ml">Description</label><textarea id="f-desc" class="mf" rows="3" style="resize:none" placeholder="Brief description…"></textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label class="ml">Priority</label><select id="f-priority" class="mf"><option value="low">🟢 Low</option><option value="medium" selected>🟡 Medium</option><option value="high">🔴 High</option></select></div>
+        <div><label class="ml">Column</label><select id="f-col" class="mf"><option value="todo">Yet to Start</option><option value="inprogress">In Progress</option><option value="completed">Completed</option></select></div>
+      </div>
+      <div style="display:flex;gap:8px;padding-top:2px">
+        <button id="btn-save" class="bp" style="flex:1;justify-content:center">Save Task</button>
+        <button onclick="closeModal()" class="bg" style="flex:1">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROJECT MODAL -->
+<div id="pmwrap" onclick="if(event.target===this)closeProjModal()">
+  <div id="pmwrap-inner">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <p id="pm-title" style="font-size:17px;font-weight:800">Projects</p>
+      <button onclick="closeProjModal()" class="bi" style="width:30px;height:30px;border-radius:8px"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div id="proj-list" style="margin-bottom:14px;max-height:260px;overflow-y:auto"></div>
+    <div style="border-top:1px solid var(--border);padding-top:13px">
+      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:8px">Create New Project</p>
+      <div style="display:flex;gap:8px">
+        <input id="new-proj-name" class="mf" type="text" placeholder="Project name…" style="flex:1"/>
+        <button id="create-proj-btn" class="bp" style="padding:0 14px">Create</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
+<script src="script.js"></script>
 </html>
